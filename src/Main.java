@@ -36,17 +36,19 @@ public class Main {
         server.createContext("/apps/", Main::handleAppsRequest);
         server.createContext("/apps/profile/", Main::handleProfileRequest);
         server.createContext("/index.html", Main::handleIndexRequest);
+        server.createContext("/css", Main::handleIndexRequest);
 
     }
 
     private static void handleIndexRequest(HttpExchange exchange) {
         try {
-            String basePath = "Data";
-            String filePath = basePath + "/index.html";
+            String filePath = "Data/index.html";
             Path file = Paths.get(filePath);
             if (Files.exists(file)) {
-                String html = loadHtmlWithResources(file, basePath);
-                byte[] fileBytes = html.getBytes(StandardCharsets.UTF_8);
+                byte[] fileBytes = Files.readAllBytes(file);
+                String html = new String(fileBytes, StandardCharsets.UTF_8);
+                html = loadResources(html);
+                fileBytes = html.getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().add("Content-Type", "text/html; charset=utf-8");
                 exchange.sendResponseHeaders(200, fileBytes.length);
                 OutputStream responseBody = exchange.getResponseBody();
@@ -65,10 +67,9 @@ public class Main {
         }
     }
 
-    private static String loadHtmlWithResources(Path file, String basePath) throws IOException {
-        String html = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
-        String cssPath = basePath + "/css/styles.css";
-        String imagePath = basePath + "/images/image.jpg";
+    private static String loadResources(String html) {
+        String cssPath = "Data/css/styles.css";
+        String imagePath = "Data/images/image.jpg";
 
         String cssTag = "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
         String imageTag = "<img src=\"" + imagePath + "\" alt=\"Image\">";
