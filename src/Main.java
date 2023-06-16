@@ -7,6 +7,9 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class Main {
     public static void main(String[] args) {
@@ -31,9 +34,50 @@ public class Main {
     private static void initRoutes(HttpServer server) {
         server.createContext("/", Main::handleRequest);
         server.createContext("/apps/", Main::handleAppsRequest);
-        server.createContext("/apps/profile", Main::handleProfileRequest);
+        server.createContext("/apps/profile/", Main::handleProfileRequest);
+        server.createContext("/index.html", Main::handleIndexRequest);
 
     }
+
+    private static void handleIndexRequest(HttpExchange exchange) {
+        try {
+            String basePath = "Data";
+            String filePath = basePath + "/index.html";
+            Path file = Paths.get(filePath);
+            if (Files.exists(file)) {
+                String html = loadHtmlWithResources(file, basePath);
+                byte[] fileBytes = html.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().add("Content-Type", "text/html; charset=utf-8");
+                exchange.sendResponseHeaders(200, fileBytes.length);
+                OutputStream responseBody = exchange.getResponseBody();
+                responseBody.write(fileBytes);
+                responseBody.close();
+            } else {
+                String response = "404 Not Found";
+                exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=utf-8");
+                exchange.sendResponseHeaders(404, response.length());
+                OutputStream responseBody = exchange.getResponseBody();
+                responseBody.write(response.getBytes(StandardCharsets.UTF_8));
+                responseBody.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String loadHtmlWithResources(Path file, String basePath) throws IOException {
+        String html = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+        String cssPath = basePath + "/css/styles.css";
+        String imagePath = basePath + "/images/image.jpg";
+
+        String cssTag = "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
+        String imageTag = "<img src=\"" + imagePath + "\" alt=\"Image\">";
+
+        return html.replace("<link rel=\"stylesheet\" href=\"styles.css\">", cssTag)
+                .replace("<img src=\"image.jpg\" alt=\"Image\">", imageTag);
+    }
+
+
     private static void handleAppsRequest(HttpExchange exchange) {
         try {
             exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=utf-8");
