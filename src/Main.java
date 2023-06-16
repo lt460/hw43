@@ -31,7 +31,7 @@ public class Main {
     private static void initRoutes(HttpServer server) {
         server.createContext("/", Main::handleRequest);
         server.createContext("/apps/", Main::handleAppsRequest);
-        server.createContext("/apps/profile", Main::handleRequest);
+        server.createContext("/apps/profile", Main::handleProfileRequest);
 
     }
     private static void handleAppsRequest(HttpExchange exchange) {
@@ -55,7 +55,27 @@ public class Main {
             e.printStackTrace();
         }
     }
-
+    private static void handleProfileRequest(HttpExchange exchange) {
+        try {
+            exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=utf-8");
+            int responseCode = 200;
+            int length = 0;
+            exchange.sendResponseHeaders(responseCode, length);
+            try (PrintWriter writer = getWriterFrom(exchange)) {
+                String method = exchange.getRequestMethod();
+                URI uri = exchange.getRequestURI();
+                String ctxPath = exchange.getHttpContext().getPath();
+                write(writer, "HTTP Метод", method);
+                write(writer, "Запрос", uri.toString());
+                write(writer, "Обработан через", ctxPath);
+                writeHeaders(writer, "Заголовки запроса", exchange.getRequestHeaders());
+                write(writer, "Папка profile", "Это страница профиля пользователя.");
+                writer.flush();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     private static void handleRequest(HttpExchange exchange) {
 
         try {
